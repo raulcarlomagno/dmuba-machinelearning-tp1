@@ -61,3 +61,4 @@ plot(df$month_launched)
 plot(df$country)
 pie(table(df$main_category));
 boxplot(usd_goal ~ country, data = df)
+#######################################
