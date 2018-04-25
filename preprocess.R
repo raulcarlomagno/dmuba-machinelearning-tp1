@@ -1,6 +1,6 @@
+library("countrycode")
 df <- read.csv("ks-projects-201801.csv")
-str(df)
-summary(df)
+options(scipen = 10) #para que no imprima en notacion cientifica
 
 columnsName2Remove = c("ID", "name", "category", "backers", "pledged", "usd.pledged", "usd_pledged_real")
 columnsIdx2Remove = match(columnsName2Remove, colnames(df));
@@ -20,21 +20,25 @@ df <- df[df$state %in% c("successful","failed"),]
 df$funded <- as.factor(ifelse(df$state == "successful", "yes", "no"))
 df <- df[, -which(colnames(df) == "state")]
 
-df <- droplevels(df) #refresh factors
-
 
 currencies <- c("AUD", "CAD", "CHF", "DKK", "EUR", "GBP", "HKD", "JPY", "MXN", "NOK", "NZD", "SEK", "SGD", "USD")
 usd_values <- c(0.76038, 0.77924, 1.02181, 0.16403, 1.22191, 1.39564, 0.12746, 0.00919, 0.05298, 0.12665, 0.71193, 0.11749, 0.75569, 1)
 dfCurrencies <- data.frame(currency = currencies, usd_value = usd_values)
-df$usd_goal <- round((df$goal * dfCurrencies[match(df$currency, dfCurrencies$currency), 2]), 2)
+df$usd_goal <- round((df$goal * dfCurrencies[match(df$currency, dfCurrencies$currency), 2]), 0)
 df$goal <- NULL #remove column
-df$usd_goal_real  <- NULL #remove column
+df$usd_goal_real <- NULL #remove column
+df$currency <- NULL
 df <- df[df$usd_goal >= 1000 & df$usd_goal <= 100000, ] #nos quedamos con los proyectos entre 1000 y 100000 de objetivo a recaudar
 df <- df[, c(setdiff(names(df), c("funded")), c("funded"))] #columna funded al final
+df$country <- countrycode(df$country, "iso2c", "country.name")
 
+df <- droplevels(df) #refresh factors
 
+set.seed(unclass(Sys.time()))
+sampledIds <- sample(1:nrow(df), 5000)
+dfSampled <- df[sampledIds,]
 
-write.csv(df, "ks-projects-processed.csv", row.names=FALSE)
+write.csv(dfSampled, "ks-projects-processed.csv", row.names=FALSE)
 
 
 goal <- df$usd_goal
@@ -54,6 +58,6 @@ summary(df)
 hist(df$usd_goal)
 hist(df$days)
 plot(df$month_launched)
-
+plot(df$country)
 pie(table(df$main_category));
 boxplot(usd_goal ~ country, data = df)
