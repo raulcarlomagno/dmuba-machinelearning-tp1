@@ -1,4 +1,5 @@
 library("countrycode")
+
 df <- read.csv("ks-projects-201801.csv")
 options(scipen = 10) #para que no imprima en notacion cientifica
 
@@ -11,7 +12,7 @@ df$launched <- as.Date(df$launched)
 df$deadline <- as.Date(df$deadline)
 df <- df[df$launched != "1970-01-01",]
 df$days_funding <- as.numeric(df$deadline - df$launched)
-df <- df[df$days >= 7,] #me quedo con los proyectos de mas de 7 dias de funding
+df <- df[df$days >= 7 & df$days <= 62,] #me quedo con los proyectos de mas de 7 dias de funding
 df$year_launched <- as.factor(format(df$launched, format="%Y"))
 Sys.setlocale("LC_TIME", "C") #para el nombre del mes en ingles
 df$month_launched <- as.factor(format(df$launched, format="%B"))
@@ -28,37 +29,44 @@ df$usd_goal <- round((df$goal * dfCurrencies[match(df$currency, dfCurrencies$cur
 df$goal <- NULL #remove column
 df$usd_goal_real <- NULL #remove column
 df$currency <- NULL
-df <- df[df$usd_goal >= 1000 & df$usd_goal <= 100000, ] #nos quedamos con los proyectos entre 1000 y 100000 de objetivo a recaudar
+df <- df[df$usd_goal >= 1000 & df$usd_goal <= 50000, ] #nos quedamos con los proyectos entre 1000 y 100000 de objetivo a recaudar
 df <- df[, c(setdiff(names(df), c("funded")), c("funded"))] #columna funded al final
 df$country <- countrycode(df$country, "iso2c", "country.name")
-
+cantNoUSA <- nrow(df[df$country != "United States",])
+#cantUSA <- nrow(df) - cantNoUSA
+#cantTotal <- nrow(df)
+dfUsa <- df[df$country == "United States", ]
+dfUsa <- dfUsa[sample(1:nrow(dfUsa), cantNoUSA), ] 
+df <- df[df$country != "United States", ]
+df <- rbind(df, dfUsa)
+df <- df[sample(1:nrow(df)), ]
+df$year_launched <- as.character(df$year_launched)
 df <- droplevels(df) #refresh factors
 
 set.seed(unclass(Sys.time()))
-sampledIds <- sample(1:nrow(df), 5000)
+sampledIds <- sample(1:nrow(df), 5000) #5000 muestras finales para entrenar
 dfSampled <- df[sampledIds,]
 
 write.csv(dfSampled, "ks-projects-processed.csv", row.names=FALSE)
 
 
-goal <- df$usd_goal
-goal.iqr <- IQR(goal)
-goal.q3 = quantile(goal, 0.75)
-goal.q1 = quantile(goal, 0.25)
-df[df$usd_goal > goal.q3 + goal.iqr * 3, ]
-df[df$usd_goal < goal.q1 - goal.iqr * 1.5, ]
-
-
-View(df[df$currency != "USD",])
-
-str(dfCurrencies)
-str(df)
-head(df)
-summary(df)
-hist(df$usd_goal)
-hist(df$days)
-plot(df$month_launched)
-plot(df$country)
-pie(table(df$main_category));
-boxplot(usd_goal ~ country, data = df)
-#######################################
+# goal <- df$usd_goal
+# goal.iqr <- IQR(goal)
+# goal.q3 = quantile(goal, 0.75)
+# goal.q1 = quantile(goal, 0.25)
+# df[df$usd_goal > goal.q3 + goal.iqr * 3, ]
+# df[df$usd_goal < goal.q1 - goal.iqr * 1.5, ]
+# 
+# 
+# View(df[df$currency != "USD",])
+# 
+# str(dfCurrencies)
+# str(df)
+# head(df)
+# summary(df)
+# hist(df$usd_goal)
+# hist(df$days)
+# plot(df$month_launched)
+# plot(df$country)
+# pie(table(df$main_category));
+# boxplot(usd_goal ~ country, data = df)
