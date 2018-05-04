@@ -1,3 +1,4 @@
+#install.packages("countrycode")
 library("countrycode")
 
 df <- read.csv("ks-projects-201801.csv")
