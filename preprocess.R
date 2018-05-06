@@ -45,10 +45,16 @@ df$year_launched <- as.character(df$year_launched)
 df <- droplevels(df) #refresh factors
 
 set.seed(unclass(Sys.time()))
-sampledIds <- sample(1:nrow(df), 5000) #5000 muestras finales para entrenar
-dfSampled <- df[sampledIds,]
+sampledIds <- sample(1:nrow(df), 6000)
+cutoff <- round(0.8 * length(sampledIds))
+sampledIdsTrain <- sampledIds[1:cutoff]
+sampledIdsTest <- setdiff(sampledIds, sampledIdsTrain)
 
-write.csv(dfSampled, "ks-projects-processed.csv", row.names=FALSE)
+dfSampledTrain <- df[sampledIdsTrain, ]
+dfSampledTest <- df[sampledIdsTest, ]
+
+write.csv(dfSampledTrain, "ks-projects-processed-train.csv", row.names=FALSE)
+write.csv(dfSampledTest, "ks-projects-processed-test.csv", row.names=FALSE)
 
 
 # goal <- df$usd_goal

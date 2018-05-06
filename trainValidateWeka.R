@@ -1,23 +1,32 @@
 #install.packages("RWeka")
 library("RWeka")
-
-trainData <- read.csv("ks-projects-processed.csv")
+library("ggplot2")
+trainData <- read.csv("ks-projects-processed-train.csv")
+testData <- read.csv("ks-projects-processed-test.csv")
 
 #WOW("J48")
 
-J48Options <- Weka_control(R = TRUE, M = 5)
-m <- J48(funded ~ ., data = trainData, control = J48Options)
-#summary(m) #calls evaluate_Weka_classifier()
-table(trainData$funded, predict(m)) 
-#pag 20
+dfPerformance <- data.frame(cf = double(), accuracy = double(), set = character(), stringsAsFactors = FALSE)
 
+#confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
+for(cf in seq(0.05, 0.5, 0.05)) {
+  print(paste("ENTRENANDO ARBOL CON CF =", cf))
+  J48Options <- Weka_control(C = cf)
+  model <- J48(funded ~ ., data = trainData, control = J48Options)
+  
+  crossValEval <- evaluate_Weka_classifier(model, numFolds = 10, class = TRUE)
+  testEval <- evaluate_Weka_classifier(model, newdata = testData, class = TRUE)
+  
+  print(sprintf("TRAINING - PORCENTAJE CORRECTOS - %.2f", crossValEval$details[["pctCorrect"]]))
+  print(sprintf("TESTING - PORCENTAJE CORRECTOS - %.2f", testEval$details[["pctCorrect"]]))
+  
+  dfPerformance[nrow(dfPerformance) + 1, ] <- c(cf, round(crossValEval$details[["pctCorrect"]], 2), "training")
+  dfPerformance[nrow(dfPerformance) + 1, ] <- c(cf, round(testEval$details[["pctCorrect"]], 2), "testing")
+}
 
-crossValEval <- evaluate_Weka_classifier(m,
-                              #cost = matrix(c(0,1,1,0), ncol = 2),
-                              numFolds = 10, class = TRUE)
-
-crossValEval
-summary(crossValEval)
-e$details[["pctCorrect"]]
-
-
+ggplot(dfPerformance, aes_string(x = "cf", y = "accuracy", colour = "set", group = "set")) +
+  geom_line() +
+  geom_point() +
+  xlab("Confidence Factor (CF)") +
+  ylab("Accuracy (%)") +
+  theme_bw()

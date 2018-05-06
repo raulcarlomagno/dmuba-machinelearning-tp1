@@ -33,3 +33,5 @@ vignettes/*.pdf
 *.knit.md
 /ks-projects-201801.csv
 /ks-projects-processed.csv
+/ks-projects-processed-test.csv
+/ks-projects-processed-train.csv
