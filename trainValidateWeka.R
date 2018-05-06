@@ -29,6 +29,15 @@ for(cf in seq(0.05, 0.5, 0.05)) {
   dfPerformance[nrow(dfPerformance) + 1, ] <- c(cf, round(testEval$details[["pctCorrect"]], 2), "testing")
 }
 
+ggplot(dfSize, aes(cf)) +
+  geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
+  geom_point(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
+  geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
+  geom_point(aes(y = treeSize, color = "Tamaño de Arbol")) +
+  xlab("Confidence Factor (CF)") +
+  ylab(NULL) +
+  theme_bw()
+
 ggplot(dfPerformance, aes_string(x = "cf", y = "accuracy", colour = "set", group = "set")) +
   geom_line() +
   geom_point() +
