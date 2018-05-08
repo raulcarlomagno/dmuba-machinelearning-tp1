@@ -37,8 +37,8 @@ for(minNumObj in seq(minNumObjStart, minNumObjEnd, minNumObjStep)) {
 ggplot(dfSize, aes(x = minNumObj)) +
   geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
   geom_point(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
-  geom_line(aes(y = treeSize, color = "TamaÃ±o de Arbol")) +
-  geom_point(aes(y = treeSize, color = "TamaÃ±o de Arbol")) +
+  geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
+  geom_point(aes(y = treeSize, color = "Tamaño de Arbol")) +
   xlab("minNumObj") +
   ylab(NULL) +
   theme_bw()
@@ -46,6 +46,7 @@ ggplot(dfSize, aes(x = minNumObj)) +
 ggplot(dfPerformance, aes_string(x = "minNumObj", y = "accuracy", colour = "set", group = "set")) +
   geom_line() +
   geom_point() +
+  expand_limits(x = 0)
   xlab("minNumObj") +
   ylab("Accuracy (%)") +
   theme_bw()
