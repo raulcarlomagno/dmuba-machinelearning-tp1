@@ -16,7 +16,6 @@ minNumObjEnd <- round(0.10 * nrow(trainData))
 minNumObjStep <- round(0.005 * nrow(trainData))
 
 
-#confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
 for(minNumObj in seq(minNumObjStart, minNumObjEnd, minNumObjStep)) {
   print(paste("ENTRENANDO ARBOL CON minNumObj =", minNumObj))
   J48Options <- Weka_control(M = minNumObj)

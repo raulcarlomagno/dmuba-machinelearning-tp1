@@ -2,24 +2,27 @@
 library("RWeka")
 library("ggplot2")
 library("partykit")
+library("rlist")
 
 trainData <- read.csv("ks-projects-processed-train.csv")
 testData <- read.csv("ks-projects-processed-test.csv")
 
 #WOW("J48")
 
-doTraining <- function(nombreParametro, valoresParametro){
-
-  #nombreParametro <- "confidenceFactor"
-  #valoresParametro <- seq(0.05, 0.5, 0.05)
+doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
   
+  j48Params <- setNames(list(1), j48ParamName)
+    
   dfPerformance <- data.frame(valorParam = double(), accuracy = double(), set = character(), stringsAsFactors = FALSE)
   dfSize <- data.frame(valorParam = double(), leavesNumber = integer(), treeSize = integer())
-  
-  #confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
+
   for(valorParametro in valoresParametro) {
     print(paste("ENTRENANDO ARBOL CON", nombreParametro, valorParametro))
-    J48Options <- Weka_control(C = valorParametro)
+  
+    j48Params[1] = valorParametro
+    J48Options <- do.call(Weka_control, as.list(j48Params))
+    
+    #J48Options <- Weka_control(C = valorParametro)
     model <- J48(funded ~ ., data = trainData, control = J48Options)
     partyModel <- as.party(model)
     dfSize[nrow(dfSize) + 1, ] <- c(valorParametro, width(partyModel), length(partyModel))
@@ -34,24 +37,37 @@ doTraining <- function(nombreParametro, valoresParametro){
     dfPerformance[nrow(dfPerformance) + 1, ] <- c(valorParametro, round(testEval$details[["pctCorrect"]], 2), "testing")
   }
   
-  ggplot(dfSize, aes_string(x = "valorParam")) +
+  graficos <- list()
+  
+  graficos <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
     geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
-    geom_point(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
+    geom_point(aes(y = leavesNumber, color = "Cantidad de Hojas"))  +
     geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
     geom_point(aes(y = treeSize, color = "Tamaño de Arbol")) +
     xlab(nombreParametro) +
     ylab(NULL) +
-    theme_bw()
+    theme_bw())
   
-  ggplot(dfPerformance, aes_string(x = "valorParam", y = "accuracy", colour = "set", group = "set")) +
+  graficos <- list(graficos, ggplot(dfPerformance, aes_string(x = "valorParam", y = "accuracy", colour = "set", group = "set")) +
     geom_line() +
     geom_point() +
     xlab(nombreParametro) +
     ylab("Accuracy (%)") +
-    theme_bw()
+    theme_bw())
+  
+  return(graficos)
 }
 
-doTraining("confidenceFactor", seq(0.05, 0.5, 0.05))
+#confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
+resultado <- doTraining("C", "confidenceFactor", seq(0.05, 0.5, 0.05))
+resultado[[1]]
+resultado[[2]]
 
 
+minNumObjStart <- round(0.005 * nrow(trainData))
+minNumObjEnd <- round(0.10 * nrow(trainData))
+minNumObjStep <- round(0.005 * nrow(trainData))
 
+resultado <- doTraining("M", "minNumObj", seq(minNumObjStart, minNumObjEnd, minNumObjStep))
+resultado[[1]]
+resultado[[2]]
