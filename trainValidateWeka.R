@@ -40,16 +40,17 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
   
   graficos <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
     geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
-    geom_point(aes(y = leavesNumber, color = "Cantidad de Hojas"))  +
     geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
-    geom_point(aes(y = treeSize, color = "Tamaño de Arbol")) +
     xlab(nombreParametro) +
     ylab(NULL) +
     theme_bw())
   
+  
+  dfPerformance$accuracy <- as.double(dfPerformance$accuracy)
+  dfPerformance$valorParam <- as.double(dfPerformance$valorParam)
+  
   graficos <- list(graficos, ggplot(dfPerformance, aes_string(x = "valorParam", y = "accuracy", colour = "set", group = "set")) +
     geom_line() +
-    geom_point() +
     xlab(nombreParametro) +
     ylab("Accuracy (%)") +
     theme_bw())
@@ -58,9 +59,9 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
 }
 
 #confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
-# resultado <- doTraining("C", "confidenceFactor", seq(0.05, 0.5, 0.05))
-# resultado[[1]]
-# resultado[[2]]
+resultado <- doTraining("C", "confidenceFactor", seq(0.05, 0.5, 0.05))
+resultado[[1]]
+resultado[[2]]
 
 
 minNumObjStart <- round(0.005 * nrow(trainData))
