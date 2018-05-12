@@ -13,7 +13,7 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
   
   j48Params <- setNames(list(1), j48ParamName)
     
-  dfPerformance <- data.frame(valorParam = double(), accuracy = double(), set = character(), stringsAsFactors = FALSE)
+  dfPerformance <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double())
   dfSize <- data.frame(valorParam = double(), leavesNumber = integer(), treeSize = integer())
 
   for(valorParametro in valoresParametro) {
@@ -32,8 +32,7 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
     print(sprintf("---accuracy training con %s (%s=%.2f) : %.2f%%", nombreParametro, j48ParamName, valorParametro, crossValEval$details[["pctCorrect"]]))
     print(sprintf("---accuracy testing con %s (%s=%.2f): %.2f%%", nombreParametro, j48ParamName, valorParametro, testEval$details[["pctCorrect"]]))
     
-    dfPerformance[nrow(dfPerformance) + 1, ] <- c(valorParametro, round(crossValEval$details[["pctCorrect"]], 2), "training")
-    dfPerformance[nrow(dfPerformance) + 1, ] <- c(valorParametro, round(testEval$details[["pctCorrect"]], 2), "testing")
+    dfPerformance[nrow(dfPerformance) + 1, ] <- c(valorParametro, round(crossValEval$details[["pctCorrect"]], 2), round(testEval$details[["pctCorrect"]], 2))
   }
   
   graficos <- list()
@@ -41,16 +40,19 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
   graficos <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
     geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
     geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
+    scale_color_hue("Métrica") +
     xlab(nombreParametro) +
     ylab(NULL) +
     theme_bw())
   
   
-  dfPerformance$accuracy <- as.double(dfPerformance$accuracy)
-  dfPerformance$valorParam <- as.double(dfPerformance$valorParam)
+  #dfPerformance$accuracy <- as.double(dfPerformance$accuracy) #lo reconvierto a numerico
+  #dfPerformance$valorParam <- as.double(dfPerformance$valorParam) #lo reconvierto a numerico
   
-  graficos <- list(graficos, ggplot(dfPerformance, aes_string(x = "valorParam", y = "accuracy", colour = "set", group = "set")) +
-    geom_line() +
+  graficos <- list(graficos, ggplot(dfPerformance, aes_string(x = "valorParam")) +
+    geom_line(aes(y = accuracyTraining, color = "Training")) +
+    geom_line(aes(y = accuracyTesting, color = "Testing")) +
+    scale_color_hue("Set") +
     xlab(nombreParametro) +
     ylab("Accuracy (%)") +
     theme_bw())
