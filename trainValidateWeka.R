@@ -41,7 +41,7 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
     geom_line(aes(y = nodes, color = "Nodos")) +
     scale_color_hue("Métrica") +
     xlab(nombreParametro) +
-    ylab(NULL) +
+    ylab("Cantidad") +
     theme_bw())
   
   resultado <- list.append(resultado, ggplot(dfPerformance, aes_string(x = "valorParam")) +
@@ -57,20 +57,37 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
   return(resultado)
 }
 
-# #confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
-# resultado <- doTraining(trainDf, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
-# resultado[[1]]
-# resultado[[2]]
-# 
-# testData
-# minNumObjStart <- round(0.005 * nrow(trainData))
-# minNumObjEnd <- round(0.10 * nrow(trainData))
-# minNumObjStep <- round(0.005 * nrow(trainData))
-# 
-# resultado <- doTraining(trainDf, testDf, "M", "minNumObj", seq(minNumObjStart, minNumObjEnd, minNumObjStep))
-# resultado[[1]]
-# resultado[[2]]
+ #confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
+ resultado <- doTraining(trainDf, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
+ resultado[[1]]
+ resultado[[2]]
 
+  
+ png("1.png", height = 666 , width=1230, units = "px", res = 300, type = "cairo")
+ print(resultado[[1]])
+ dev.off()
+ 
+ png("2.png", height = 666 , width=1230, units = "px", res = 300, type = "cairo")
+ print(resultado[[2]])
+ dev.off()
+
+ 
+minNumObjStart <- round(0.005 * nrow(trainDf))
+minNumObjEnd <- round(0.10 * nrow(trainDf))
+minNumObjStep <- round(0.005 * nrow(trainDf))
+
+resultado <- doTraining(trainDf, testDf, "M", "minNumObj", seq(minNumObjStart, minNumObjEnd, minNumObjStep))
+resultado[[1]]
+resultado[[2]]
+
+
+png("3.png", height = 666 , width=1230, units = "px", res = 300, type = "cairo")
+print(resultado[[1]])
+dev.off()
+
+png("4.png", height = 666 , width=1230, units = "px", res = 300, type = "cairo")
+print(resultado[[2]])
+dev.off()
 
 dfPerformanceFaltantes <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), porcentajeFaltantes = integer())
 dfSizeFaltantes <- data.frame(valorParam = double(), leaves = integer(), nodes = integer(), porcentajeFaltantes = integer())
@@ -106,23 +123,36 @@ for(faltantePorcent in faltantesPorcent){
 dfSizeFaltantes$porcentajeFaltantes <- as.factor(dfSizeFaltantes$porcentajeFaltantes)
 dfPerformanceFaltantes$porcentajeFaltantes <- as.factor(dfPerformanceFaltantes$porcentajeFaltantes)
 
-ggplot(dfSizeFaltantes, aes(x = valorParam, y = leaves, color = porcentajeFaltantes)) +
+plot1 <- ggplot(dfSizeFaltantes, aes(x = valorParam, y = leaves, color = porcentajeFaltantes)) +
   geom_line() +
   scale_color_hue("% Faltantes") +
   xlab("confidenceFactor") +
   ylab("Hojas") +
   theme_bw()
 
-ggplot(dfSizeFaltantes, aes(x = valorParam, y = nodes, color = porcentajeFaltantes)) +
+png("5.png", height = 666 , width=1230, units = "px", res = 150, type = "cairo")
+print(plot1)
+dev.off()
+
+
+plot2 <- ggplot(dfSizeFaltantes, aes(x = valorParam, y = nodes, color = porcentajeFaltantes)) +
   geom_line() +
   scale_color_hue("% Faltantes") +
   xlab("confidenceFactor") +
   ylab("Nodos") +
   theme_bw()
 
-ggplot(dfPerformanceFaltantes, aes(x = valorParam, y = accuracyTraining, color = porcentajeFaltantes)) +
+png("6.png", height = 666 , width=1230, units = "px", res = 150, type = "cairo")
+print(plot2)
+dev.off()
+
+plot3 <- ggplot(dfPerformanceFaltantes, aes(x = valorParam, y = accuracyTraining, color = porcentajeFaltantes)) +
   geom_line() +
   scale_color_hue("% Faltantes") +
   xlab("confidenceFactor") +
   ylab("Accuracy (%)") +
   theme_bw()
+
+png("7.png", height = 694 , width=1280, units = "px", res = 150, type = "cairo")
+print(plot3)
+dev.off()
