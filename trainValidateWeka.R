@@ -4,12 +4,12 @@ library("ggplot2")
 library("partykit")
 library("rlist")
 
-trainData <- read.csv("ks-projects-processed-train.csv")
-testData <- read.csv("ks-projects-processed-test.csv")
+trainDf <- read.csv("ks-projects-processed-train.csv")
+testDf <- read.csv("ks-projects-processed-test.csv")
 
 #WOW("J48")
 
-doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
+doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valoresParametro){
   
   j48Params <- setNames(list(1), j48ParamName)
     
@@ -35,9 +35,8 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
     dfPerformance[nrow(dfPerformance) + 1, ] <- c(valorParametro, round(crossValEval$details[["pctCorrect"]], 2), round(testEval$details[["pctCorrect"]], 2))
   }
   
-  graficos <- list()
   
-  graficos <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
+  resultado <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
     geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
     geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
     scale_color_hue("Métrica") +
@@ -45,11 +44,7 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
     ylab(NULL) +
     theme_bw())
   
-  
-  #dfPerformance$accuracy <- as.double(dfPerformance$accuracy) #lo reconvierto a numerico
-  #dfPerformance$valorParam <- as.double(dfPerformance$valorParam) #lo reconvierto a numerico
-  
-  graficos <- list(graficos, ggplot(dfPerformance, aes_string(x = "valorParam")) +
+  resultado <- list.append(resultado, ggplot(dfPerformance, aes_string(x = "valorParam")) +
     geom_line(aes(y = accuracyTraining, color = "Training")) +
     geom_line(aes(y = accuracyTesting, color = "Testing")) +
     scale_color_hue("Set") +
@@ -57,19 +52,55 @@ doTraining <- function(j48ParamName, nombreParametro, valoresParametro){
     ylab("Accuracy (%)") +
     theme_bw())
   
-  return(graficos)
+  resultado <- list.append(resultado, dfSize, dfPerformance)
+  
+  return(resultado)
 }
 
-#confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
-resultado <- doTraining("C", "confidenceFactor", seq(0.05, 0.5, 0.05))
-resultado[[1]]
-resultado[[2]]
+# #confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
+# resultado <- doTraining(trainDf, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
+# resultado[[1]]
+# resultado[[2]]
+# 
+# testData
+# minNumObjStart <- round(0.005 * nrow(trainData))
+# minNumObjEnd <- round(0.10 * nrow(trainData))
+# minNumObjStep <- round(0.005 * nrow(trainData))
+# 
+# resultado <- doTraining(trainDf, testDf, "M", "minNumObj", seq(minNumObjStart, minNumObjEnd, minNumObjStep))
+# resultado[[1]]
+# resultado[[2]]
+
+dfPerformanceFaltantes <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), porcentajeFaltantes = integer())
+dfSizeFaltantes <- data.frame(valorParam = double(), leavesNumber = integer(), treeSize = integer(), porcentajeFaltantes = integer())
+
+colName <- "month_launched"
+colIndex <- match(colName, colnames(trainDf))
+colModa <- names(tail(sort(table(trainDf[, colIndex])), 1))
+
+#faltantesPorcent <- seq(0, 0.75, 0.05)
+faltantesPorcent <- seq(0, 0.15, 0.05)
+for(faltantePorcent in faltantesPorcent){
+  print(sprintf("generando  %.2f%% faltantes", faltantePorcent * 100))
+  
+  if(faltantePorcent == 0){
+    trainCopy <- trainDf
+  } else {
+    set.seed(unclass(Sys.time()))
+    idxColFaltantes <- sample(nrow(trainDf), round(faltantePorcent * nrow(trainDf)))
+    trainCopy <- trainDf
+    trainCopy[idxColFaltantes, colIndex] <- colModa
+  }
+  
+  #doTraining(trainCopy, testData, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
+  resultado <- doTraining(trainCopy, testDf, "C", "confidenceFactor", seq(0.05, 0.1, 0.05))
+  #resultado[[4]] #performance
+  #resultado[[3]] #size
+  
+  
+  dfPerformanceFaltantes <- rbind(dfPerformanceFaltantes, transform(resultado[[4]], porcentajeFaltantes = faltantePorcent * 100))
+  dfSizeFaltantes <- rbind(dfSizeFaltantes, transform(resultado[[3]], porcentajeFaltantes = faltantePorcent * 100))
+
+}
 
 
-minNumObjStart <- round(0.005 * nrow(trainData))
-minNumObjEnd <- round(0.10 * nrow(trainData))
-minNumObjStep <- round(0.005 * nrow(trainData))
-
-resultado <- doTraining("M", "minNumObj", seq(minNumObjStart, minNumObjEnd, minNumObjStep))
-resultado[[1]]
-resultado[[2]]
