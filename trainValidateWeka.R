@@ -14,7 +14,7 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
   j48Params <- setNames(list(1), j48ParamName)
     
   dfPerformance <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double())
-  dfSize <- data.frame(valorParam = double(), leavesNumber = integer(), treeSize = integer())
+  dfSize <- data.frame(valorParam = double(), leaves = integer(), nodes = integer())
 
   for(valorParametro in valoresParametro) {
     print(sprintf("entrenando arbol con %s (%s) = %.2f", nombreParametro, j48ParamName, valorParametro))
@@ -37,8 +37,8 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
   
   
   resultado <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
-    geom_line(aes(y = leavesNumber, color = "Cantidad de Hojas")) +
-    geom_line(aes(y = treeSize, color = "Tamaño de Arbol")) +
+    geom_line(aes(y = leaves, color = "Hojas")) +
+    geom_line(aes(y = nodes, color = "Nodos")) +
     scale_color_hue("Métrica") +
     xlab(nombreParametro) +
     ylab(NULL) +
@@ -71,15 +71,16 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
 # resultado[[1]]
 # resultado[[2]]
 
-dfPerformanceFaltantes <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), porcentajeFaltantes = integer())
-dfSizeFaltantes <- data.frame(valorParam = double(), leavesNumber = integer(), treeSize = integer(), porcentajeFaltantes = integer())
 
-colName <- "month_launched"
+dfPerformanceFaltantes <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), porcentajeFaltantes = integer())
+dfSizeFaltantes <- data.frame(valorParam = double(), leaves = integer(), nodes = integer(), porcentajeFaltantes = integer())
+
+colName <- "month_launched" #nombre de columna para simular faltantes
 colIndex <- match(colName, colnames(trainDf))
 colModa <- names(tail(sort(table(trainDf[, colIndex])), 1))
 
 #faltantesPorcent <- seq(0, 0.75, 0.05)
-faltantesPorcent <- seq(0, 0.15, 0.05)
+faltantesPorcent <- seq(0, 0.75, 0.05)
 for(faltantePorcent in faltantesPorcent){
   print(sprintf("generando  %.2f%% faltantes", faltantePorcent * 100))
   
@@ -93,14 +94,35 @@ for(faltantePorcent in faltantesPorcent){
   }
   
   #doTraining(trainCopy, testData, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
-  resultado <- doTraining(trainCopy, testDf, "C", "confidenceFactor", seq(0.05, 0.1, 0.05))
+  resultado <- doTraining(trainCopy, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
   #resultado[[4]] #performance
   #resultado[[3]] #size
-  
-  
+
   dfPerformanceFaltantes <- rbind(dfPerformanceFaltantes, transform(resultado[[4]], porcentajeFaltantes = faltantePorcent * 100))
   dfSizeFaltantes <- rbind(dfSizeFaltantes, transform(resultado[[3]], porcentajeFaltantes = faltantePorcent * 100))
 
 }
 
+dfSizeFaltantes$porcentajeFaltantes <- as.factor(dfSizeFaltantes$porcentajeFaltantes)
+dfPerformanceFaltantes$porcentajeFaltantes <- as.factor(dfPerformanceFaltantes$porcentajeFaltantes)
 
+ggplot(dfSizeFaltantes, aes(x = valorParam, y = leaves, color = porcentajeFaltantes)) +
+  geom_line() +
+  scale_color_hue("% Faltantes") +
+  xlab("confidenceFactor") +
+  ylab("Hojas") +
+  theme_bw()
+
+ggplot(dfSizeFaltantes, aes(x = valorParam, y = nodes, color = porcentajeFaltantes)) +
+  geom_line() +
+  scale_color_hue("% Faltantes") +
+  xlab("confidenceFactor") +
+  ylab("Nodos") +
+  theme_bw()
+
+ggplot(dfPerformanceFaltantes, aes(x = valorParam, y = accuracyTraining, color = porcentajeFaltantes)) +
+  geom_line() +
+  scale_color_hue("% Faltantes") +
+  xlab("confidenceFactor") +
+  ylab("Accuracy (%)") +
+  theme_bw()
