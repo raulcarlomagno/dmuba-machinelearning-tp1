@@ -9,12 +9,10 @@ binAsign <- function(bins, values){
   
   for (value in values) {
     tempBin <- 0
-    
     for (bin in bins) {
       if(value >= bin) #TODO: optimizar el corte
         tempBin <- bin    
     }
-    
     resultVector <- c(resultVector, tempBin)
   }
   
@@ -36,15 +34,28 @@ bins2Text <- function(bins){
 }
 
 
+discretizarIgualAncho <- function(df, nombreCol, cantBins, replaceCol){
+  colIdx <- match(nombreCol, colnames(df))
+  valores <- df[, colIdx]
+  minimo <- min(valores)
+  maximo <- max(valores)
+  rango <- maximo - minimo
+  tamanioBin <- round(rango / cantBins)
+  bins <- seq(minimo, cantBins * tamanioBin, tamanioBin)
+  textBins <- bins2Text(bins)
+  binsAssigned <- binAsign(bins, valores)
+  textBinsAssigned <- textBins[match(binsAssigned, bins)]
+  
+  if(replaceCol) {
+    df[, colIdx] <- textBinsAssigned
+  } else {
+    df <- cbind(df, textBinsAssigned)
+    colnames(df)[ncol(df)] <- paste(nombreCol, "_discrete", sep = "")
+  }
+  
+  return(df)
+}
 
-days  <- trainData$days_funding
-minimo <- min(days)
-maximo <- max(days)
-rango <- maximo - minimo
-cantBins <- 10
-tamanioBin <- round(rango / cantBins)
-bins <- seq(minimo, cantBins * tamanioBin, tamanioBin)
-textBins <- bins2Text(bins)
-binsAssigned <- binAsign(bins, days)
-assigned <- data.frame(days, binsAssigned, textBins[match(binsAssigned, bins)])
-
+trainCopy <- trainData
+trainCopy <- discretizarIgualAncho(trainCopy, "days_funding", 5, TRUE)
+head(discretizarIgualAncho(trainCopy, "usd_goal", 5, TRUE))

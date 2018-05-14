@@ -1,16 +1,15 @@
-#install.packages("RWeka")
-library("RWeka")
-library("ggplot2")
-library("partykit")
-library("rlist")
+library("RWeka") #install.packages("RWeka")
+library("ggplot2") #install.packages("ggplot2")
+library("partykit") #install.packages("partykit")
+library("rlist") #install.packages("rlist")
 
 trainDf <- read.csv("ks-projects-processed-train.csv")
 testDf <- read.csv("ks-projects-processed-test.csv")
 
-savePlot <- function(plot, titulo, fileName){
+savePlot <- function(plot, titulo, fileName, ppi = 150){
   plot <- plot + ggtitle(titulo)
   print(sprintf("saving plot to %s", fileName))
-  png(fileName, height = 666 , width=1230, units = "px", res = 150, type = "cairo")
+  png(fileName, height = 666 , width=1230, units = "px", res = ppi, type = "cairo")
   print(plot)
   dev.off()
 }
@@ -63,45 +62,41 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
   return(resultado)
 }
 
-trainFaltantes <- function(colFaltante, estrategiaModa = TRUE){
+trainFaltantes <- function(faltantesPorcent, colFaltante, colClase, clasePositiveValue, estrategiaModa = TRUE){
   dfPerformanceFaltantes <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), porcentajeFaltantes = integer())
   dfSizeFaltantes <- data.frame(valorParam = double(), leaves = integer(), nodes = integer(), porcentajeFaltantes = integer())
   
   colName <- colFaltante #nombre de columna para simular faltantes
   colIndex <- match(colName, colnames(trainDf))
+  colClaseIndex <- match(colClase, colnames(trainDf))
+  
   if(estrategiaModa){
     colModa <- names(tail(sort(table(trainDf[, colIndex])), 1))
   } else {
-    colModaFunded <- names(tail(sort(table(trainDf[trainDf$funded == "yes", colIndex])), 1))
-    colModaNotFunded <- names(tail(sort(table(trainDf[trainDf$funded == "no", colIndex])), 1))
+    colModaPositive <- names(tail(sort(table(trainDf[trainDf[, colClaseIndex] == clasePositiveValue, colIndex])), 1))
+    colModaNegative <- names(tail(sort(table(trainDf[trainDf[, colClaseIndex] != clasePositiveValue, colIndex])), 1))
   }
   
-  #faltantesPorcent <- seq(0, 0.75, 0.05)
-  faltantesPorcent <- seq(0, 0.75, 0.05)
   for(faltantePorcent in faltantesPorcent){
-    print(sprintf("generando  %.2f%% faltantes", faltantePorcent * 100))
+    print(sprintf("generando  %.2f%% faltantes", faltantePorcent))
     
     if(faltantePorcent == 0){
       trainCopy <- trainDf
     } else {
       set.seed(unclass(Sys.time()))
-      idxColFaltantes <- sample(nrow(trainDf), round(faltantePorcent * nrow(trainDf)))
+      idxColFaltantes <- sample(nrow(trainDf), round(faltantePorcent/100 * nrow(trainDf)))
       trainCopy <- trainDf
       if(estrategiaModa){
         trainCopy[idxColFaltantes, colIndex] <- colModa
       } else {
-        trainCopy[idxColFaltantes, colIndex] <- ifelse(trainCopy[idxColFaltantes, ]$funded == "yes", colModaFunded, colModaNotFunded)
+        trainCopy[idxColFaltantes, colIndex] <- ifelse(trainCopy[idxColFaltantes, colClaseIndex] == clasePositiveValue, colModaPositive, colModaNegative)
       }
     }
     
-    #doTraining(trainCopy, testData, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
     resultado <- doTraining(trainCopy, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
-    #resultado[[4]] #performance
-    #resultado[[3]] #size
-    
-    dfPerformanceFaltantes <- rbind(dfPerformanceFaltantes, transform(resultado[[4]], porcentajeFaltantes = faltantePorcent * 100))
-    dfSizeFaltantes <- rbind(dfSizeFaltantes, transform(resultado[[3]], porcentajeFaltantes = faltantePorcent * 100))
-    
+
+    dfPerformanceFaltantes <- rbind(dfPerformanceFaltantes, transform(resultado[[4]], porcentajeFaltantes = faltantePorcent))
+    dfSizeFaltantes <- rbind(dfSizeFaltantes, transform(resultado[[3]], porcentajeFaltantes = faltantePorcent))
   }
   
   dfSizeFaltantes$porcentajeFaltantes <- as.factor(dfSizeFaltantes$porcentajeFaltantes)
@@ -136,31 +131,29 @@ trainFaltantes <- function(colFaltante, estrategiaModa = TRUE){
 }
 
 
-toleranciaRuido <- function(colClase, valorClase){
+toleranciaRuido <- function(ruidosPorcent, colClase, valorClase){
   dfPerformanceRuido <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), porcentajeRuido = integer())
   dfSizeRuido <- data.frame(valorParam = double(), leaves = integer(), nodes = integer(), porcentajeRuido = integer())
   
   colIndex <- match(colClase, colnames(trainDf))
   colModa <- names(tail(sort(table(trainDf[, colIndex])), 1))
   
-  ruidosPorcent <- seq(0, 0.35, 0.01)
   for(ruidoPorcent in ruidosPorcent){
-    print(sprintf("generando  %.2f%% de ruido", ruidoPorcent * 100))
+    print(sprintf("generando  %.2f%% de ruido", ruidoPorcent))
     
     if(ruidoPorcent == 0){
       trainCopy <- trainDf
     } else {
       set.seed(unclass(Sys.time()))
-      idxRowRuido <- sample(nrow(trainDf), round(ruidoPorcent * nrow(trainDf)))
+      idxRowRuido <- sample(nrow(trainDf), round(ruidoPorcent/100 * nrow(trainDf)))
       trainCopy <- trainDf
       trainCopy[idxRowRuido, colIndex] <- valorClase
     }
     
     resultado <- doTraining(trainCopy, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
 
-    dfPerformanceRuido <- rbind(dfPerformanceRuido, transform(resultado[[4]], porcentajeRuido = ruidoPorcent * 100))
-    dfSizeRuido <- rbind(dfSizeRuido, transform(resultado[[3]], porcentajeRuido = ruidoPorcent * 100))
-    
+    dfPerformanceRuido <- rbind(dfPerformanceRuido, transform(resultado[[4]], porcentajeRuido = ruidoPorcent))
+    dfSizeRuido <- rbind(dfSizeRuido, transform(resultado[[3]], porcentajeRuido = ruidoPorcent))
   }
   
   dfSizeRuido$porcentajeRuido <- as.factor(dfSizeRuido$porcentajeRuido)
@@ -194,6 +187,115 @@ toleranciaRuido <- function(colClase, valorClase){
   return(resultado)
 }
 
+
+binAsign <- function(bins, values){
+  resultVector <- vector()
+  tempBin <- 0
+  
+  for (value in values) {
+    tempBin <- 0
+    for (bin in bins) {
+      if(value >= bin) #TODO: optimizar el corte
+        tempBin <- bin    
+    }
+    resultVector <- c(resultVector, tempBin)
+  }
+  
+  return(resultVector)
+}
+
+bins2Text <- function(bins){
+  labels <- vector()
+  lastBin <- max(bins)
+  
+  for (i in seq(length(bins))) {
+    if(bins[i] == lastBin)
+      labels <- c(labels, paste(">", bins[i]))
+    else
+      labels <- c(labels, sprintf("%s a %s", bins[i], bins[i + 1] - 1))
+  }
+  
+  return(labels)
+}
+
+
+discretizarIgualAncho <- function(df, nombreCol, cantBins, replaceCol){
+  colIdx <- match(nombreCol, colnames(df))
+  valores <- df[, colIdx]
+  minimo <- min(valores)
+  maximo <- max(valores)
+  rango <- maximo - minimo
+  tamanioBin <- round(rango / cantBins)
+  bins <- seq(minimo, cantBins * tamanioBin, tamanioBin)
+  textBins <- bins2Text(bins)
+  binsAssigned <- binAsign(bins, valores)
+  textBinsAssigned <- textBins[match(binsAssigned, bins)]
+  
+  if(replaceCol) {
+    df[, colIdx] <- as.factor(textBinsAssigned)
+  } else {
+    df <- cbind(df, as.factor(textBinsAssigned))
+    colnames(df)[ncol(df)] <- paste(nombreCol, "_discrete", sep = "")
+  }
+  
+  return(df)
+}
+
+
+discretizar <- function(cantBins, colsDiscretizar){
+  copyTrainDf <- trainDf
+  copyTestDf <- testDf
+  
+  dfPerformanceDiscretizado <- data.frame(valorParam = double(), accuracyTraining = double(), accuracyTesting = double(), cantBins = integer())
+  dfSizeDiscretizado <- data.frame(valorParam = double(), leaves = integer(), nodes = integer(), cantBins = integer())  
+  
+  for(cantBin in cantBins){
+    dfDiscretizadoTrain <- copyTrainDf
+    dfDiscretizadoTest <- copyTrainDf
+    print(sprintf("discretizando con Igual_ancho y %i bins", cantBin))
+    for(colDiscretizar in colsDiscretizar){
+      print(sprintf("discretizando con Igual_ancho columna %s con %i bins", colDiscretizar, cantBin))
+      dfDiscretizadoTrain <- discretizarIgualAncho(dfDiscretizadoTrain, colDiscretizar, cantBin, TRUE)
+      dfDiscretizadoTest <- discretizarIgualAncho(dfDiscretizadoTest, colDiscretizar, cantBin, TRUE)
+    }
+    resultado <- doTraining(dfDiscretizadoTrain, dfDiscretizadoTest, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
+    
+    dfPerformanceDiscretizado <- rbind(dfPerformanceDiscretizado, transform(resultado[[4]], cantBins = cantBin))
+    dfSizeDiscretizado <- rbind(dfSizeDiscretizado, transform(resultado[[3]], cantBins = cantBin))
+  }
+
+  dfSizeDiscretizado$cantBins <- as.factor(dfSizeDiscretizado$cantBins)
+  dfPerformanceDiscretizado$cantBins <- as.factor(dfPerformanceDiscretizado$cantBins)
+  
+  resultado <- list(dfSizeDiscretizado, dfPerformanceDiscretizado)
+  
+  plot1 <- ggplot(dfSizeDiscretizado, aes(x = valorParam, y = leaves, color = cantBins)) +
+    geom_line() +
+    scale_color_hue("Cant. bins") +
+    xlab("confidenceFactor") +
+    ylab("Hojas") +
+    theme_bw()
+  
+  plot2 <- ggplot(dfSizeDiscretizado, aes(x = valorParam, y = nodes, color = cantBins)) +
+    geom_line() +
+    scale_color_hue("Cant. bins") +
+    xlab("confidenceFactor") +
+    ylab("Nodos") +
+    theme_bw()
+  
+  plot3 <- ggplot(dfPerformanceDiscretizado, aes(x = valorParam, y = accuracyTesting, color = cantBins)) +
+    geom_line() +
+    scale_color_hue("Cant. bins") +
+    xlab("confidenceFactor") +
+    ylab("Accuracy (%)") +
+    theme_bw()
+  
+  resultado <- list.append(resultado, plot1, plot2, plot3)
+  
+  return(resultado)
+}
+
+
 # PUNTO 3 ########################################################################################## PUNT0 3
 #confidenceFactor -- The confidence factor used for pruning (smaller values incur more pruning).
 resultado <- doTraining(trainDf, testDf, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
@@ -211,20 +313,26 @@ savePlot(resultado[[2]], "Sobreajuste y poda (minNumObj) - Performance arbol", "
 
 
 # PUNTO 5 ########################################################################################## PUNT0 5
-faltantesModaTrain <- trainFaltantes("month_launched")
+faltantesModaTrain <- trainFaltantes(seq(0, 75, 5), "month_launched", "funded", "yes")
 savePlot(faltantesModaTrain[[3]], "Tratamiento de datos faltantes - Moda - Hojas arbol", "5 - moda - hojas.png")
 savePlot(faltantesModaTrain[[4]], "Tratamiento de datos faltantes - Moda - Nodos arbol", "5 - moda - nodos.png")
 savePlot(faltantesModaTrain[[5]], "Tratamiento de datos faltantes - Moda - Performance arbol", "5 - moda - performance.png")
 
-faltantesModaClaseTrain <- trainFaltantes("month_launched", FALSE)
+faltantesModaClaseTrain <- trainFaltantes(seq(0, 75, 5), "month_launched", "funded", "yes", FALSE)
 savePlot(faltantesModaClaseTrain[[3]], "Tratamiento de datos faltantes - Modaclase - Hojas arbol", "5 - modaclase - hojas.png")
 savePlot(faltantesModaClaseTrain[[4]], "Tratamiento de datos faltantes - Modaclase - Nodos arbol", "5 - modaclase - nodos.png")
 savePlot(faltantesModaClaseTrain[[5]], "Tratamiento de datos faltantes - Modaclase - Performance arbol", "5 - modaclase - performance.png")
 
 
 # PUNTO 6 ########################################################################################## PUNT0 6
-toleranciaRuidoTrain <- toleranciaRuido("funded", "no")
-savePlot(toleranciaRuidoTrain[[3]], "Tolerancia al ruido - Hojas arbol", "6 - hojas.png")
-savePlot(toleranciaRuidoTrain[[4]], "Tolerancia al ruido  - Nodos arbol", "6 - nodos.png")
-savePlot(toleranciaRuidoTrain[[5]], "Tolerancia al ruido - Performance arbol", "6 - performance.png")
+toleranciaRuidoTrain <- toleranciaRuido(0:35, "funded", "no")
+savePlot(toleranciaRuidoTrain[[3]], "Tolerancia al ruido - Hojas arbol", "6 - hojas.png", 125)
+savePlot(toleranciaRuidoTrain[[4]], "Tolerancia al ruido - Nodos arbol", "6 - nodos.png", 125)
+savePlot(toleranciaRuidoTrain[[5]], "Tolerancia al ruido - Performance arbol", "6 - performance.png", 125)
 
+
+# PUNTO 7 ########################################################################################## PUNT0 7
+discretizadoIgualAncho <- discretizar(1:20, c("usd_goal", "days_funding"))
+savePlot(discretizadoIgualAncho[[3]], "Discretización de atributos numéricos - Igual_ancho - Hojas arbol", "7 - igual_ancho - hojas.png", 125)
+savePlot(discretizadoIgualAncho[[4]], "Discretización de atributos numéricos - Igual_ancho - Nodos arbol", "7 - igual_ancho - nodos.png", 125)
+savePlot(discretizadoIgualAncho[[5]], "Discretización de atributos numéricos - Igual_ancho - Performance arbol", "7 - igual_ancho - performance testing.png", 125)
