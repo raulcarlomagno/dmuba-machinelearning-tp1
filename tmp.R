@@ -59,3 +59,9 @@ discretizarIgualAncho <- function(df, nombreCol, cantBins, replaceCol){
 trainCopy <- trainData
 trainCopy <- discretizarIgualAncho(trainCopy, "days_funding", 5, TRUE)
 head(discretizarIgualAncho(trainCopy, "usd_goal", 5, TRUE))
+
+
+
+
+
+

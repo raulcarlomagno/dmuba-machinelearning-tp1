@@ -241,8 +241,38 @@ discretizarIgualAncho <- function(df, nombreCol, cantBins, replaceCol){
   return(df)
 }
 
+discretizarIgualCantidad <- function(df, nombreCol, cantBins, replaceCol){
+  colIdx <- match(nombreCol, colnames(df))
+  valores <- df[, colIdx]
+  unicos = sort(unique(valores))
+  cantUnicos = length(unicos)
+  cantPorBin = ceiling(cantUnicos / cantBins)
 
-discretizar <- function(cantBins, colsDiscretizar){
+  bins = c()
+  cont = 0
+  for(nro in unicos){
+    if(cont == cantPorBin | cont == 0){
+      cont = 0
+      bins = c(bins, nro)  
+    }
+    cont = cont + 1 
+  }
+  
+  textBins <- bins2Text(bins)
+  binsAssigned <- binAsign(bins, valores)
+  textBinsAssigned <- textBins[match(binsAssigned, bins)]
+  
+  if(replaceCol) {
+    df[, colIdx] <- as.factor(textBinsAssigned)
+  } else {
+    df <- cbind(df, as.factor(textBinsAssigned))
+    colnames(df)[ncol(df)] <- paste(nombreCol, "_discrete", sep = "")
+  }
+  
+  return(df)
+}
+
+discretizar <- function(cantBins, colsDiscretizar, igualAncho = TRUE){
   copyTrainDf <- trainDf
   copyTestDf <- testDf
   
@@ -252,11 +282,16 @@ discretizar <- function(cantBins, colsDiscretizar){
   for(cantBin in cantBins){
     dfDiscretizadoTrain <- copyTrainDf
     dfDiscretizadoTest <- copyTrainDf
-    print(sprintf("discretizando con Igual_ancho y %i bins", cantBin))
+    print(sprintf("discretizando con %s y %i bins", ifelse(igualAncho, "Igual_ancho", "Igual_cantidad"), cantBin))
     for(colDiscretizar in colsDiscretizar){
-      print(sprintf("discretizando con Igual_ancho columna %s con %i bins", colDiscretizar, cantBin))
-      dfDiscretizadoTrain <- discretizarIgualAncho(dfDiscretizadoTrain, colDiscretizar, cantBin, TRUE)
-      dfDiscretizadoTest <- discretizarIgualAncho(dfDiscretizadoTest, colDiscretizar, cantBin, TRUE)
+      print(sprintf("discretizando con %s columna %s con %i bins", ifelse(igualAncho, "Igual_ancho", "Igual_cantidad"), colDiscretizar, cantBin))
+      if(igualAncho) {
+        dfDiscretizadoTrain <- discretizarIgualAncho(dfDiscretizadoTrain, colDiscretizar, cantBin, TRUE)
+        dfDiscretizadoTest <- discretizarIgualAncho(dfDiscretizadoTest, colDiscretizar, cantBin, TRUE)  
+      } else {
+        dfDiscretizadoTrain <- discretizarIgualCantidad(dfDiscretizadoTrain, colDiscretizar, cantBin, TRUE)
+        dfDiscretizadoTest <- discretizarIgualCantidad(dfDiscretizadoTest, colDiscretizar, cantBin, TRUE)  
+      }
     }
     resultado <- doTraining(dfDiscretizadoTrain, dfDiscretizadoTest, "C", "confidenceFactor", seq(0.05, 0.5, 0.05))
     
@@ -336,3 +371,9 @@ discretizadoIgualAncho <- discretizar(1:20, c("usd_goal", "days_funding"))
 savePlot(discretizadoIgualAncho[[3]], "Discretización de atributos numéricos - Igual_ancho - Hojas arbol", "7 - igual_ancho - hojas.png", 125)
 savePlot(discretizadoIgualAncho[[4]], "Discretización de atributos numéricos - Igual_ancho - Nodos arbol", "7 - igual_ancho - nodos.png", 125)
 savePlot(discretizadoIgualAncho[[5]], "Discretización de atributos numéricos - Igual_ancho - Performance arbol", "7 - igual_ancho - performance testing.png", 125)
+
+
+discretizadoIgualCantidad <- discretizar(1:20, c("usd_goal", "days_funding"), FALSE)
+savePlot(discretizadoIgualCantidad[[3]], "Discretización de atributos numéricos - Igual_cantidad - Hojas arbol", "7 - igual_ancho - hojas.png", 125)
+savePlot(discretizadoIgualCantidad[[4]], "Discretización de atributos numéricos - Igual_cantidad - Nodos arbol", "7 - igual_ancho - nodos.png", 125)
+savePlot(discretizadoIgualCantidad[[5]], "Discretización de atributos numéricos - Igual_cantidad - Performance arbol", "7 - igual_ancho - performance testing.png", 125)
