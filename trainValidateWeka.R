@@ -5,6 +5,8 @@ library("rlist") #install.packages("rlist")
 
 savePlot <- function(plot, titulo, fileName, ppi = 150){
   plot <- plot + ggtitle(titulo)
+  plot <- plot + theme_light()
+  #TODO: setear el theme aca
   print(sprintf("saving plot to %s", fileName))
   png(paste("plots\\", fileName, sep = ""), height = 666 , width=1230, units = "px", res = ppi, type = "cairo")
   print(plot)
@@ -24,7 +26,7 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
     j48Params[1] <- valorParametro
     J48Options <- do.call(Weka_control, as.list(j48Params))
     
-    model <- J48(funded ~ ., data = trainData, control = J48Options)
+    model <- J48(as.formula(paste(classColumnName, "~ .")), data = trainData, control = J48Options)
     partyModel <- as.party(model)
     dfSize[nrow(dfSize) + 1, ] <- c(valorParametro, width(partyModel), length(partyModel))
     
@@ -43,16 +45,14 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
     geom_line(aes(y = nodes, color = "Nodos")) +
     scale_color_hue("Métrica") +
     xlab(nombreParametro) +
-    ylab("Cantidad") +
-    theme_bw())
+    ylab("Cantidad"))
   
   resultado <- list.append(resultado, ggplot(dfPerformance, aes_string(x = "valorParam")) +
     geom_line(aes(y = accuracyTraining, color = "Training")) +
     geom_line(aes(y = accuracyTesting, color = "Testing")) +
     scale_color_hue("Set") +
     xlab(nombreParametro) +
-    ylab("Accuracy (%)") +
-    theme_bw())
+    ylab("Accuracy (%)"))
   
   resultado <- list.append(resultado, dfSize, dfPerformance)
   
@@ -75,7 +75,7 @@ trainFaltantes <- function(faltantesPorcent, colFaltante, colClase, clasePositiv
   }
   
   for(faltantePorcent in faltantesPorcent){
-    print(sprintf("generando  %.2f%% faltantes", faltantePorcent))
+    print(sprintf("generando %.2f%% faltantes", faltantePorcent))
     
     if(faltantePorcent == 0){
       trainCopy <- trainDf
@@ -105,22 +105,19 @@ trainFaltantes <- function(faltantesPorcent, colFaltante, colClase, clasePositiv
     geom_line() +
     scale_color_hue("% Faltantes") +
     xlab("confidenceFactor") +
-    ylab("Hojas") +
-    theme_bw()
+    ylab("Hojas")
   
   plot2 <- ggplot(dfSizeFaltantes, aes(x = valorParam, y = nodes, color = porcentajeFaltantes)) +
     geom_line() +
     scale_color_hue("% Faltantes") +
     xlab("confidenceFactor") +
-    ylab("Nodos") +
-    theme_bw()
+    ylab("Nodos")
   
   plot3 <- ggplot(dfPerformanceFaltantes, aes(x = valorParam, y = accuracyTraining, color = porcentajeFaltantes)) +
     geom_line() +
     scale_color_hue("% Faltantes") +
     xlab("confidenceFactor") +
-    ylab("Accuracy (%)") +
-    theme_bw()
+    ylab("Accuracy (%)")
   
   resultado <- list.append(resultado, plot1, plot2, plot3)
   
@@ -162,22 +159,19 @@ toleranciaRuido <- function(ruidosPorcent, colClase, valorClase){
     geom_line() +
     scale_color_hue("% Ruido") +
     xlab("confidenceFactor") +
-    ylab("Hojas") +
-    theme_bw()
+    ylab("Hojas")
   
   plot2 <- ggplot(dfSizeRuido, aes(x = valorParam, y = nodes, color = porcentajeRuido)) +
     geom_line() +
     scale_color_hue("% Ruido") +
     xlab("confidenceFactor") +
-    ylab("Nodos") +
-    theme_bw()
+    ylab("Nodos")
   
   plot3 <- ggplot(dfPerformanceRuido, aes(x = valorParam, y = accuracyTraining, color = porcentajeRuido)) +
     geom_line() +
     scale_color_hue("% Ruido") +
     xlab("confidenceFactor") +
-    ylab("Accuracy (%)") +
-    theme_bw()
+    ylab("Accuracy (%)")
   
   resultado <- list.append(resultado, plot1, plot2, plot3)
   
@@ -305,22 +299,19 @@ discretizar <- function(cantBins, colsDiscretizar, igualAncho = TRUE){
     geom_line() +
     scale_color_hue("Cant. bins") +
     xlab("confidenceFactor") +
-    ylab("Hojas") +
-    theme_bw()
+    ylab("Hojas")
   
   plot2 <- ggplot(dfSizeDiscretizado, aes(x = valorParam, y = nodes, color = cantBins)) +
     geom_line() +
     scale_color_hue("Cant. bins") +
     xlab("confidenceFactor") +
-    ylab("Nodos") +
-    theme_bw()
+    ylab("Nodos")
   
   plot3 <- ggplot(dfPerformanceDiscretizado, aes(x = valorParam, y = accuracyTesting, color = cantBins)) +
     geom_line() +
     scale_color_hue("Cant. bins") +
     xlab("confidenceFactor") +
-    ylab("Accuracy (%)") +
-    theme_bw()
+    ylab("Accuracy (%)")
   
   resultado <- list.append(resultado, plot1, plot2, plot3)
   
