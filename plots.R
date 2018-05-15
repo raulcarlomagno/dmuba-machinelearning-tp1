@@ -44,6 +44,6 @@ savePlot(discretizadoIgualAncho[[4]], "Discretización de atributos numéricos -
 savePlot(discretizadoIgualAncho[[5]], "Discretización de atributos numéricos - Igual_ancho - Performance arbol", "7 - igual_ancho - performance testing.png", 125)
 
 discretizadoIgualCantidad <- discretizar(1:20, c("usd_goal", "days_funding"), FALSE)
-savePlot(discretizadoIgualCantidad[[3]], "Discretización de atributos numéricos - Igual_cantidad - Hojas arbol", "7 - igual_ancho - hojas.png", 125)
-savePlot(discretizadoIgualCantidad[[4]], "Discretización de atributos numéricos - Igual_cantidad - Nodos arbol", "7 - igual_ancho - nodos.png", 125)
-savePlot(discretizadoIgualCantidad[[5]], "Discretización de atributos numéricos - Igual_cantidad - Performance arbol", "7 - igual_ancho - performance testing.png", 125)
+savePlot(discretizadoIgualCantidad[[3]], "Discretización de atributos numéricos - Igual_cantidad - Hojas arbol", "7 - igual_cantidad - hojas.png", 125)
+savePlot(discretizadoIgualCantidad[[4]], "Discretización de atributos numéricos - Igual_cantidad - Nodos arbol", "7 - igual_cantidad - nodos.png", 125)
+savePlot(discretizadoIgualCantidad[[5]], "Discretización de atributos numéricos - Igual_cantidad - Performance arbol", "7 - igual_cantidad - performance testing.png", 125)

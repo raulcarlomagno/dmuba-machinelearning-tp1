@@ -6,7 +6,7 @@ library("rlist") #install.packages("rlist")
 savePlot <- function(plot, titulo, fileName, ppi = 150){
   plot <- plot + ggtitle(titulo)
   print(sprintf("saving plot to %s", fileName))
-  png(fileName, height = 666 , width=1230, units = "px", res = ppi, type = "cairo")
+  png(paste("plots\\", fileName, sep = ""), height = 666 , width=1230, units = "px", res = ppi, type = "cairo")
   print(plot)
   dev.off()
 }
