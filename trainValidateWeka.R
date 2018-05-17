@@ -2,8 +2,6 @@ library("RWeka") #install.packages("RWeka")
 library("ggplot2") #install.packages("ggplot2")
 library("partykit") #install.packages("partykit")
 library("rlist") #install.packages("rlist")
-library("hrbrthemes")
-
 
 savePlot <- function(plot, titulo, subtitulo, fileName, ppi = 150){
   plot <- plot + ggtitle(titulo, subtitulo)
@@ -44,7 +42,7 @@ doTraining <- function(trainData, testData, j48ParamName, nombreParametro, valor
   resultado <- list(ggplot(dfSize, aes_string(x = "valorParam")) +
     geom_line(aes(y = leaves, color = "Hojas")) +
     geom_line(aes(y = nodes, color = "Nodos")) +
-    scale_color_hue("Métrica") +
+    scale_color_hue("MÃ©trica") +
     xlab(nombreParametro) +
     ylab("Cantidad"))
   
