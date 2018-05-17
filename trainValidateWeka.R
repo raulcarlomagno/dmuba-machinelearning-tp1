@@ -2,11 +2,12 @@ library("RWeka") #install.packages("RWeka")
 library("ggplot2") #install.packages("ggplot2")
 library("partykit") #install.packages("partykit")
 library("rlist") #install.packages("rlist")
+library("hrbrthemes")
 
-savePlot <- function(plot, titulo, fileName, ppi = 150){
-  plot <- plot + ggtitle(titulo)
-  plot <- plot + theme_light()
-  #TODO: setear el theme aca
+
+savePlot <- function(plot, titulo, subtitulo, fileName, ppi = 150){
+  plot <- plot + ggtitle(titulo, subtitulo)
+  plot <- plot + theme_minimal()
   print(sprintf("saving plot to %s", fileName))
   png(paste("plots\\", fileName, sep = ""), height = 666 , width=1230, units = "px", res = ppi, type = "cairo")
   print(plot)
